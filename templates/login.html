@@ -3,43 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <title>로그인</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        /*그림자,둥근 테두리 추가*/
+        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 350px; text-align: center; }
+        h2 { color: #4a90e2; margin-bottom: 30px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
+        /* 커서 올렸을 때 색이 변함*/
+        button { width: 100%; padding: 12px; background: #4a90e2; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #357abd; }
+        .links { margin-top: 20px; font-size: 0.9rem; color: #888; }
+        .links a { color: #4a90e2; text-decoration: none; }
+        /* 에러 메시지(빨강) */
+        .flash-msg { color: #ff6b6b; font-size: 0.85rem; margin-bottom: 15px; }
+    </style>
 </head>
 <body>
-    <h2>🔐 로그인</h2>
+    <div class="login-card">
+        <h2>Todo Login</h2>
+        {# 서버에서 보낸 알림 메시지가 있다면 출력 #}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash-msg">{{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+        <form action="/login" method="POST" autocomplete="off">
+            <input type="text" style="display:none;">
+            <input type="password" style="display:none;">
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <p style="color: red;">{{ message }}</p>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
-    <form action="/login" method="POST">
-        <div>
-            <label>아이디:</label>
-            <input type="text" name="username" required>
-        </div>
-        <div>
-            <label>비밀번호:</label>
-            <input type="password" name="password" id="pw_input" required>
-            <button type="button" onclick="togglePassword()">👁️ 보기</button>
-        </div>
-        <br>
-        <button type="submit">로그인</button>
-    </form>
-
-    <p>계정이 없으신가요? <a href="/signup">회원가입하기</a></p>
-
-    <script>
-        function togglePassword() {
-            const pwInput = document.getElementById('pw_input');
-            if (pwInput.type === 'password') {
-                pwInput.type = 'text'; // 텍스트로 변경 (보이게)
-            } else {
-                pwInput.type = 'password'; // 비밀번호로 변경 (가리기)
-            }
-        }
-    </script>
+            <input type="text" name="username" placeholder="아이디" 
+                   autocomplete="new-password" required> 
+            <input type="password" name="password" placeholder="비밀번호" 
+                   autocomplete="new-password" required>
+            <button type="submit">로그인</button>
+        </form>
+        <div class="links">계정이 없으신가요? <a href="/signup">회원가입</a></div>
+    </div>
 </body>
 </html>

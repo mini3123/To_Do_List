@@ -1,75 +1,200 @@
-<div style="text-align: center; margin-bottom: 20px;">
-    <a href="/main?year={{ year if month > 1 else year - 1 }}&month={{ month - 1 if month > 1 else 12 }}">◀ 이전 달</a>
-    
-    <span style="font-size: 24px; font-weight: bold; margin: 0 20px;">
-        {{ year }}년 {{ month }}월
-    </span>
-    
-    <a href="/main?year={{ year if month < 12 else year + 1 }}&month={{ month + 1 if month < 12 else 1 }}">다음 달 ▶</a>
-</div>
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>메인 달력</title>
-    <style>
-        .container { display: flex; } 
-        .calendar { flex: 7; border: 1px solid #ccc; padding: 10px; }
-        .todo-list { flex: 3; border: 1px solid #eee; padding: 10px; background: #f9f9f9; }
-        table { width: 100%; border-collapse: collapse; }
-        td { width: 14%; height: 80px; text-align: center; border: 1px solid #ddd; }
-        td {
-            width: 14%;      
-            height: 60px;    
-            vertical-align: top; 
-            padding: 5px;
-            border: 1px solid #ddd;
+    <title>Smart Todo Calendar</title>
+     /*구글폰트*/
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet"> 
+    <style> /*CSS*/
+        :root {
+            --primary-color: #4a90e2; /*메인 파랑*/
+            --bg-color: #f4f7f6; /*배경 연회색*/
+            --text-color: #333; /*기본 글자 검정*/
+        }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; }
+        
+        /*로고, 유저정보 양 끝으로 배치*/
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 15px 40px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        header h2 { margin: 0; font-size: 1.2rem; color: #555; }
+        header span { color: var(--primary-color); font-weight: bold; }
+        header a { text-decoration: none; color: #ff6b6b; font-size: 0.9rem; border: 1px solid #ff6b6b; padding: 5px 12px; border-radius: 20px; transition: 0.3s; }
+        header a:hover { background: #ff6b6b; color: white; }
+        /*달력과 할 일 목록 7:3으로 비율 맞춤*/
+        .container { display: flex; max-width: 1200px; margin: 30px auto; gap: 20px; padding: 0 20px; align-items: flex-start; } /*Flex 사용 좌우 배치*/
+        
+        .calendar { flex: 7; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
+        .nav-btn { text-decoration: none; color: #888; padding: 8px 15px; border-radius: 8px; background: #f8f9fa; transition: 0.2s; border: none; cursor: pointer; display: inline-block; }
+        .nav-btn:hover { background: #eee; }
+        .nav-btn.active { background: var(--primary-color); color: white !important; }
+
+        .selected-day {
+            background-color: #fff9db !important;   
+            border: 2px solid #fab005 !important; 
+            border-radius: 10px;
         }
 
-        td a {
-            text-decoration: none; 
-            color: #333;
-            font-weight: bold;
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        th { padding: 15px; font-weight: 500; color: #999; border-bottom: 2px solid #f4f4f4; }
+        td { height: 100px; border: 1px solid #f9f9f9; position: relative; transition: 0.2s; vertical-align: top; padding: 10px; }
+        /*달력에 마우스 커서 가져다 대면 살짝 커지는 포인트*/
+        td:hover { background-color: #fcfdff; transform: scale(1.02); z-index: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        .date-link { text-decoration: none; color: #444; font-weight: 500; font-size: 1rem; }
+        .today { background-color: #eef5ff !important; border: 2px solid var(--primary-color) !important; border-radius: 10px; }
+        .sun { color: #ff6b6b !important; }
+        .sat { color: #4a90e2 !important; }
+        /*할 일이 있으면 달력에 도트 점 생기는 코드*/
+        .todo-dot { 
+            position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: 6px; height: 6px; background: var(--primary-color); border-radius: 50%;
         }
+
+        .todo-list { flex: 3; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: fit-content; }
+        .todo-item { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 12px; margin-bottom: 10px; border-bottom: 1px solid #f4f4f4; transition: 0.3s;
+        }
+        .todo-item:hover { background: #fcfcfc; }
+        .completed-text { text-decoration: line-through; color: #bbb; } /*완료된 할 일은 글자에 라인 선이 그임*/
+        
+        input[type="text"] { border: 1px solid #ddd; padding: 10px; border-radius: 8px; width: 65%; outline: none; }
+        button { background: var(--primary-color); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
     </style>
 </head>
 <body>
     <header>
-        <h2>환영합니다! {{ user_id }}님.</h2>
+        <h2>환영합니다, <span>{{ user_name }}</span>님!</h2>
         <a href="/logout">로그아웃</a>
     </header>
 
     <div class="container">
         <div class="calendar">
-            <h3>{{ year }}년 {{ month }}월</h3>
-            <table>
-                <tr>
-                    <th>일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th>토</th>
-                </tr>
-                <tr>
-                    {% for _ in empty_days %}
-                        <td></td>
-                    {% endfor %}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <a href="/main" class="nav-btn">Today</a>
+                <div>
+                    {# 이전 달 #}
+                    <a href="/main?year={{ year if month > 1 else year - 1 }}&month={{ month - 1 if month > 1 else 12 }}" class="nav-btn">◀</a> 
+                    <a href="/main?mode=year_select&year={{ year }}&month={{ month }}" 
+                       style="font-size: 1.5rem; font-weight: bold; margin: 0 15px; color: #333; text-decoration: none; border-bottom: 2px dashed #4a90e2;">
+                        {{ year }}년 {{ month }}월
+                    </a>
+                    {# 다음 달 #}
+                    <a href="/main?year={{ year if month < 12 else year + 1 }}&month={{ month + 1 if month < 12 else 1 }}" class="nav-btn">▶</a>
+                </div>
+                <div style="width: 50px;"></div>
+            </div>
 
-                    {% for day in range_last_day %}
-                        <td>
-                            <a href="/main?year={{ year }}&month={{ month }}&date={{ year }}-{{ '%02d' % month }}-{{ '%02d' % day }}">
-                                {{ day }}
-                            </a>
-                        </td>
-
-                        {% if (empty_days|length + day) % 7 == 0 %}
-                            </tr><tr>
-                        {% endif %}
+            {% if mode == 'year_select' %}
+                <div style="text-align: center; margin-bottom: 20px; color: #888;">이동할 연도를 선택하세요</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; padding: 20px;">
+                    {#1일부터 마지막 날 까지 반복#}
+                    {% for y in year_range %}
+                        <a href="/main?mode=month_select&year={{ y }}&month={{ month }}" 
+                           class="nav-btn {{ 'active' if y == year else '' }}" 
+                           style="padding: 20px; font-size: 1.2rem; text-align: center;">
+                            {{ y }}년
+                        </a>
                     {% endfor %}
-                </tr>
-            </table>
-        </div>
+                    <a href="/main?year={{ year }}&month={{ month }}" style="grid-column: span 3; text-align: center; margin-top: 20px; color: #ccc; text-decoration: none;">취소</a>
+                </div>
+
+            {% elif mode == 'month_select' %}
+                <div style="text-align: center; margin-bottom: 20px; font-weight: bold; color: var(--primary-color);">{{ year }}년의 월을 선택하세요</div>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 20px;">
+                    {% for m in range(1, 13) %}
+                        <a href="/main?year={{ year }}&month={{ m }}" 
+                           class="nav-btn {{ 'active' if m == month else '' }}" 
+                           style="padding: 20px; text-align: center;">
+                            {{ m }}월
+                        </a>
+                    {% endfor %}
+                    <a href="/main?mode=year_select&year={{ year }}" style="grid-column: span 4; text-align: center; margin-top: 15px; color: #888; text-decoration: none;">◀ 연도 다시 선택</a>
+                </div>
+
+            {% else %}
+                <table>
+                    <tr>
+                        <th class="sun">일</th><th>월</th><th>화</th><th>수</th><th>목</th><th>금</th><th class="sat">토</th>
+                    </tr>
+                    <tr>
+                        {# empty_days만큼 공백 생성 #}
+                        {% for _ in empty_days %}<td></td>{% endfor %}
+                        {% for day in range_last_day %}
+                            {% set current_loop_date = "%s-%02d-%02d" % (year, month, day) %}
+                            <td class="
+                                {{ 'today' if year == now_year and month == now_month and day == now_day else '' }}
+                                {{ 'selected-day' if current_loop_date == selected_date else '' }}
+                            ">
+                                <a href="/main?year={{ year }}&month={{ month }}&date={{ current_loop_date }}" class="date-link 
+                                    {{ 'sun' if (empty_days|length + day) % 7 == 1 else '' }}
+                                    {{ 'sat' if (empty_days|length + day) % 7 == 0 else '' }}">
+                                    {{ day }}
+                                </a>
+                                {# DB에 해당 날짜 Todo가 있으면 점(dot) 표시 #}
+                                {% if todo_counts.get(current_loop_date) %}
+                                    <div class="todo-dot"></div>
+                                {% endif %}
+                            </td>
+                            {# 토요일마다 줄바꿈(tr 닫고 새로 열기) #}
+                            {% if (empty_days|length + day) % 7 == 0 %}</tr><tr>{% endif %}
+                        {% endfor %}
+                    </tr>
+                </table>
+            {% endif %}
+        </div> 
 
         <div class="todo-list">
-            <h4>할 일 목록</h4>
-            <p>날짜를 클릭하면 목록이 보입니다.</p>
-        </div>
+            <h3 style="margin-top: 0;">📅 {{ selected_date }}</h3>
+            <form action="/add_todo" method="POST" style="display: flex; gap: 5px; margin-bottom: 20px;">
+                <input type="hidden" name="date" value="{{ selected_date }}">
+                <input type="text" name="content" placeholder="할 일을 추가하세요." required>
+                <button type="submit">등록</button>
+            </form>
+
+            {% for todo in todo_list %}
+                <div class="todo-item">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <a href="/check_todo/{{ todo[0] }}?date={{ selected_date }}" style="text-decoration: none;">
+                            {{ '✅' if todo[2] == 1 else '⬜' }}
+                        </a>
+                        <span class="{{ 'completed-text' if todo[2] == 1 else '' }}" onclick="editTodo('{{ todo[0] }}', '{{ todo[1] }}', '{{ selected_date }}')" style="cursor: pointer;">
+                            {{ todo[1] }}
+                        </span>
+                    </div>
+                    <a href="/delete_todo/{{ todo[0] }}?date={{ selected_date }}" style="color: #ffadad; text-decoration: none; font-size: 0.8rem;">삭제</a>
+                </div>
+            {% else %}
+                <p style="text-align: center; color: #ccc; margin-top: 50px;">할 일이 없습니다.</p>
+            {% endfor %}
+        </div> 
     </div>
+
+    <script>
+        function editTodo(id, oldContent, date) {
+            // 브라우저 창에 입력창 띄움
+            const newContent = prompt("할 일을 수정하세요:", oldContent);
+            // 내용이 바뀌었을 시 폼을 만들어서 서버로 전송
+            if (newContent && newContent !== oldContent) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/edit_todo/' + id; // 주소 뒤에 고유한 번호를 (경로 변수) 넣어서 서버가 수정할 데이터를 이해할 수 있게 해줌
+                // 전송할 데이터를 담을 가상의 input 생성 (DOM 조작)
+                const cInp = document.createElement('input'); // 메모리에 input 태그 생성
+                cInp.name = 'new_content'; // input 이름을 new_content로 정함 : 서버에서 request.form.get('new_content') 꺼내 쓸 때 new_content 필요 
+                cInp.value = newContent; // 사용자가 새로 입력한 글자를 input의 값으로 넣음
+                form.appendChild(cInp); // 미리 만들어둔 폼 바구니에 input 넣음
+                
+                const dInp = document.createElement('input'); 
+                dInp.name = 'date'; 
+                dInp.value = date; 
+                form.appendChild(dInp); // 현재 수정 중인 할 일이 어느 날짜인지 값을 넣어줌
+                document.body.appendChild(form); // 미리 만들어둔 폼 바구니에 넣음
+                form.submit(); // 폼을 서버로 보냄
+            }
+        }
+    </script>
 </body>
 </html>
