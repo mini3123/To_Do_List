@@ -1,5 +1,5 @@
 import sqlite3
-import calendar #달력
+import calendar #달력（윤년 계산）
 from flask import Flask, render_template, request, redirect, url_for, flash , session
 from datetime import datetime #기본날짜 ,시간
 
@@ -21,7 +21,7 @@ def main():
     month = request.args.get('month', datetime.now().month, type=int)
     selected_date = request.args.get('date', datetime.now().strftime('%Y-%m-%d')) #다른 날짜 클릭 시 해당 날짜의 ToDo를 보여줌
 
-    first_weekday, last_day = calendar.monthrange(year, month)
+    first_weekday, last_day = calendar.monthrange(year, month) # 달력의 마지막 날짜 가져옴
     display_weekday = (first_weekday + 1) % 7
     empty_days = range(display_weekday) # 달력 1일 시작 전 공백
     range_last_day = range(1, last_day + 1) # 1일부터 마지막 날 리스트
